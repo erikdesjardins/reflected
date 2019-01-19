@@ -1,0 +1,50 @@
+language: rust
+rust: stable
+branches:
+  only:
+    - master
+    - /^v[0-9]/
+cache:
+  cargo: true
+matrix:
+  include:
+    - name: Test
+      before_script:
+        - rustup component add rustfmt
+        - rustup component add clippy
+      script:
+        - cargo fmt --all -- --check
+        - RUSTFLAGS="-D warnings" cargo clippy
+        - cargo test
+    - name: Linux
+      addons:
+        apt:
+          packages:
+            - musl-tools
+      before_script:
+        - rustup target add x86_64-unknown-linux-musl
+      script:
+        - cargo build --release --target=x86_64-unknown-linux-musl
+        - strip target/x86_64-unknown-linux-musl/release/reflected
+        - ls -lh target/x86_64-unknown-linux-musl/release/reflected
+      deploy:
+        - provider: releases
+          api_key:
+            secure: Gpp6Zc9HwgKY65CGhkVFg7inJrqT+i2aV86Fr2YXToXoevhuimrlf1pKUtO3UjyHDeJiG2/goHJBZ7nBw3YI9svp8RO3KvlxYBYqo9I71VVu3JNejTEESjG0TbZg+UTRqMVn/ECbeXgex/FoPlLzWjEzOee9aM3n88WbExSbCU8S1XIuXTDtd3GGclr8c6OSKfQ4gEQZEjjg+CJSb/h0sinHlGibujtQr3x87m0Ad66qjAm9KyeZMC3IXIdfVdq97CpL5FP3Rit5gak5LEdEIlRLvHYXlve2bxCOPpAcGfQnI+M9cMSJCsNxCmModVx1mein6/wqlRfHpWPpAHUPXNOnIflEnbi07D6spa9m3zSTG0fb1OV8j4l2gHGvAz8Q/0+t0Vb5seodcmNls7u0H6bi/QLSqcSfFG8xbEMkBSQoNqmgM6eVBLQamjNlmzk5ewOuKjFwKo3/2VUMioDOI6EbyOzFy+8wZ9+xhRyunEpnmHd3vQNlA52WmUojEyxxdiGlrSCmQpJEfWhlBmQ7/uB3bA/KdwIMfupQdGyscnQkco0iHDM5YON+EfG3OYfPeX9DpHaMy+S/NyhXRsgAq+uth7aJ1ZcHYfZ9wLmSlEBxFcnjwGWq90u5oRuzLeIhPicZ4kIiSO53HQ7zzKM2p0bjGytWduEy4L1k4uZDhDo=
+          file: target/x86_64-unknown-linux-musl/release/reflected
+          skip_cleanup: true
+          on:
+            tags: true
+    - name: Windows
+      os: windows
+      script:
+        - cargo build --release
+        - ls -lh target/release/reflected.exe
+      deploy:
+        - provider: releases
+          api_key:
+            secure: Gpp6Zc9HwgKY65CGhkVFg7inJrqT+i2aV86Fr2YXToXoevhuimrlf1pKUtO3UjyHDeJiG2/goHJBZ7nBw3YI9svp8RO3KvlxYBYqo9I71VVu3JNejTEESjG0TbZg+UTRqMVn/ECbeXgex/FoPlLzWjEzOee9aM3n88WbExSbCU8S1XIuXTDtd3GGclr8c6OSKfQ4gEQZEjjg+CJSb/h0sinHlGibujtQr3x87m0Ad66qjAm9KyeZMC3IXIdfVdq97CpL5FP3Rit5gak5LEdEIlRLvHYXlve2bxCOPpAcGfQnI+M9cMSJCsNxCmModVx1mein6/wqlRfHpWPpAHUPXNOnIflEnbi07D6spa9m3zSTG0fb1OV8j4l2gHGvAz8Q/0+t0Vb5seodcmNls7u0H6bi/QLSqcSfFG8xbEMkBSQoNqmgM6eVBLQamjNlmzk5ewOuKjFwKo3/2VUMioDOI6EbyOzFy+8wZ9+xhRyunEpnmHd3vQNlA52WmUojEyxxdiGlrSCmQpJEfWhlBmQ7/uB3bA/KdwIMfupQdGyscnQkco0iHDM5YON+EfG3OYfPeX9DpHaMy+S/NyhXRsgAq+uth7aJ1ZcHYfZ9wLmSlEBxFcnjwGWq90u5oRuzLeIhPicZ4kIiSO53HQ7zzKM2p0bjGytWduEy4L1k4uZDhDo=
+          file: target/release/reflected.exe
+          skip_cleanup: true
+          on:
+            tags: true
