@@ -6,9 +6,10 @@ description = "Temporarily upload and serve files from memory."
 edition = "2018"
 
 [dependencies]
+bytes = "0.4"
 env_logger = { version = "0.6", default-features = false, features = ["humantime"] }
+failure = "0.1"
 futures = "0.1"
-http = "0.1"
 hyper = "0.12"
 log = "0.4"
 structopt = { version = "0.2", default-features = false }
