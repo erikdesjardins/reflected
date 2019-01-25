@@ -1,9 +1,9 @@
 use failure::Error;
-use futures::{future, Future, Stream};
 use memmap::Mmap;
 use tempfile::tempfile;
 use tokio::fs::File;
 use tokio::io::write_all;
+use tokio::prelude::*;
 
 pub fn write_to_mmap<T, E>(
     body: impl Stream<Item = T, Error = E>,
