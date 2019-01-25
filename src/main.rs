@@ -1,4 +1,5 @@
 mod err;
+mod file;
 mod opt;
 mod server;
 
