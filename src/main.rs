@@ -1,3 +1,5 @@
+#![allow(clippy::map_clone)]
+
 mod err;
 mod file;
 mod opt;
