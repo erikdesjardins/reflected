@@ -47,7 +47,11 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 let resp = write_to_mmap(req.into_body())
                     .map(move |mmap| {
                         info!("POST {} -> [uploaded {} bytes]", uri, mmap.len());
-                        files.write().unwrap().insert(uri.path().to_string(), Box::leak(Box::new(mmap)));
+                        // files can't be removed, so leaking is fine
+                        // ...and it appears to be the only way to create a response,
+                        // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
+                        let file = Box::leak(Box::new(mmap));
+                        files.write().unwrap().insert(uri.path().to_string(), file);
                         Response::new(Body::empty())
                     });
                 B(resp)
