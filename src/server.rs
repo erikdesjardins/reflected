@@ -3,11 +3,11 @@ use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 
 use failure::Error;
-use futures::future::Either::{A, B};
 use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use log::{info, warn};
 use memmap::Mmap;
+use tokio::prelude::future::Either::{A, B};
 use tokio::prelude::*;
 use tokio::runtime::Runtime;
 

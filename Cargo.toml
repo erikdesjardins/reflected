@@ -8,7 +8,6 @@ edition = "2018"
 [dependencies]
 env_logger = { version = "0.6", default-features = false, features = ["humantime"] }
 failure = "0.1"
-futures = "0.1"
 hyper = "0.12"
 log = "0.4"
 memmap = "0.7"
