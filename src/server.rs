@@ -33,7 +33,7 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                     None => {
                         info!("GET  {} -> [not found]", req.uri());
                         let mut resp = Response::new(Body::from(
-                            r#"<html><input type="file" onchange="fetch(location, { method: 'POST', body: files[0] }).then(() => this.replaceWith('Done'))"/></html>"#,
+                            r#"<html><input type="file" onchange="this.replaceWith('Uploading...'), fetch(location, { method: 'POST', body: files[0] }).then(() => info.replaceWith('Done'))"/><span id="info"/></html>"#,
                         ));
                         *resp.status_mut() = StatusCode::NOT_FOUND;
                         A(future::ok(resp))
