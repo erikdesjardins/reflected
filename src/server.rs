@@ -41,20 +41,27 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 }
             }
             Method::POST => {
-                let uri = req.uri().clone();
-                info!("POST {} -> [start upload]", uri);
-                let files = Arc::clone(&files);
-                let resp = write_to_mmap(req.into_body())
-                    .map(move |mmap| {
-                        info!("POST {} -> [uploaded {} bytes]", uri, mmap.len());
-                        // files can't be removed, so leaking is fine
-                        // ...and it appears to be the only way to create a response,
-                        // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
-                        let file = Box::leak(Box::new(mmap));
-                        files.write().unwrap().insert(uri.path().to_string(), file);
-                        Response::new(Body::empty())
-                    });
-                B(resp)
+                if files.read().unwrap().contains_key(req.uri().path()) {
+                    warn!("POST {} -> [already exists]", req.uri());
+                    let mut resp = Response::new(Body::empty());
+                    *resp.status_mut() = StatusCode::CONFLICT;
+                    A(future::ok(resp))
+                } else {
+                    info!("POST {} -> [start upload]", req.uri());
+                    let uri = req.uri().clone();
+                    let files = Arc::clone(&files);
+                    let resp = write_to_mmap(req.into_body())
+                        .map(move |mmap| {
+                            info!("POST {} -> [uploaded {} bytes]", uri, mmap.len());
+                            // files can't be removed, so leaking is fine
+                            // ...and it appears to be the only way to create a response,
+                            // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
+                            let file = Box::leak(Box::new(mmap));
+                            files.write().unwrap().insert(uri.path().to_string(), file);
+                            Response::new(Body::empty())
+                        });
+                    B(resp)
+                }
             }
             _ => {
                 warn!("{} {} -> [method not allowed]", req.method(), req.uri());
