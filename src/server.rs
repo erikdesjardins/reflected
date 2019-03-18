@@ -5,7 +5,6 @@ use std::sync::{Arc, RwLock};
 use failure::Error;
 use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
-use log::{info, warn};
 use memmap::Mmap;
 use tokio::prelude::future::Either::{A, B};
 use tokio::prelude::*;
@@ -26,12 +25,12 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 let file = files.read().unwrap().get(req.uri().path()).map(|file| *file);
                 match file {
                     Some(file) => {
-                        info!("GET  {} -> [found {} bytes]", req.uri(), file.len());
+                        log::info!("GET  {} -> [found {} bytes]", req.uri(), file.len());
                         let resp = Response::new(Body::from(file.as_ref()));
                         A(future::ok(resp))
                     }
                     None => {
-                        info!("GET  {} -> [not found]", req.uri());
+                        log::info!("GET  {} -> [not found]", req.uri());
                         let mut resp = Response::new(Body::from(
                             concat!(
                                 "<html>",
@@ -52,17 +51,17 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
             }
             Method::POST => {
                 if files.read().unwrap().contains_key(req.uri().path()) {
-                    warn!("POST {} -> [already exists]", req.uri());
+                    log::warn!("POST {} -> [already exists]", req.uri());
                     let mut resp = Response::new(Body::empty());
                     *resp.status_mut() = StatusCode::CONFLICT;
                     A(future::ok(resp))
                 } else {
-                    info!("POST {} -> [start upload]", req.uri());
+                    log::info!("POST {} -> [start upload]", req.uri());
                     let uri = req.uri().clone();
                     let files = Arc::clone(&files);
                     let resp = write_to_mmap(req.into_body())
                         .map(move |mmap| {
-                            info!("POST {} -> [uploaded {} bytes]", uri, mmap.len());
+                            log::info!("POST {} -> [uploaded {} bytes]", uri, mmap.len());
                             // files can't be removed, so leaking is fine
                             // ...and it appears to be the only way to create a response,
                             // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
@@ -74,7 +73,7 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 }
             }
             _ => {
-                warn!("{} {} -> [method not allowed]", req.method(), req.uri());
+                log::warn!("{} {} -> [method not allowed]", req.method(), req.uri());
                 let mut resp = Response::new(Body::empty());
                 *resp.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
                 A(future::ok(resp))
