@@ -57,7 +57,7 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 B(resp)
             }
             _ => {
-                warn!("{} {}", req.method(), req.uri());
+                warn!("{} {} -> [method not allowed]", req.method(), req.uri());
                 let mut resp = Response::new(Body::empty());
                 *resp.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
                 A(future::ok(resp))
