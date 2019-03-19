@@ -6,12 +6,11 @@ use failure::Error;
 use hyper::header::HOST;
 use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
-use memmap::Mmap;
 use tokio::prelude::future::Either::{A, B};
 use tokio::prelude::*;
 use tokio::runtime::Runtime;
 
-use crate::file::write_to_mmap;
+use crate::file::write_to_mmap_and_leak;
 
 pub fn run(addr: &SocketAddr) -> Result<(), Error> {
     let mut runtime = Runtime::new()?;
@@ -62,13 +61,11 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 log::info!("POST {} -> [start upload]", req.uri());
                 let uri = req.uri().clone();
                 let files = Arc::clone(&files);
-                let resp = write_to_mmap(req.into_body())
-                    .map(move |mmap| {
-                        log::info!("POST {} -> [uploaded {} bytes]", uri, mmap.len());
-                        // files can't be removed, so leaking is fine
-                        // ...and it appears to be the only way to create a response,
-                        // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
-                        let file = &**Box::leak(Box::new(mmap));
+                // leaking appears to be the only (efficient) way to create a response,
+                // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
+                let resp = write_to_mmap_and_leak(req.into_body())
+                    .map(move |file| {
+                        log::info!("POST {} -> [uploaded {} bytes]", uri, file.len());
                         files.write().unwrap().insert(uri.path().to_string(), file);
                         Response::new(Body::empty())
                     });
