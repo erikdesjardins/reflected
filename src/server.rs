@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 
 use failure::Error;
+use hyper::header::HOST;
 use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use memmap::Mmap;
@@ -31,18 +32,26 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                     }
                     None => {
                         log::info!("GET  {} -> [not found]", req.uri());
+                        let path = match req.uri().path().trim_start_matches('/') {
+                            "" => "file.txt",
+                            p => p,
+                        };
+                        let host = match req.headers().get(HOST).and_then(|h| h.to_str().ok()) {
+                            None => "example.com",
+                            Some(h) => h,
+                        };
                         let mut resp = Response::new(Body::from(
-                            concat!(
+                            format!(concat!(
                                 "<html>",
-                                "<code>curl -Of -X POST --data-binary @file.txt example.com/path/file.txt</code>",
+                                "<code>curl -Of -X POST --data-binary @{path} {host}/{path}</code>",
                                 "<p/>",
                                 "<span id='info'>or </span>",
                                 "<input",
                                 " type='file'",
-                                " onchange=\"disabled = true, info.replaceWith('uploading...'), fetch(location, { method: 'POST', body: files[0] }).then(() => this.replaceWith('done'))\"",
+                                " onchange=\"disabled = true, info.replaceWith('uploading...'), fetch(location, {{ method: 'POST', body: files[0] }}).then(() => this.replaceWith('done'))\"",
                                 "/>",
                                 "</html>",
-                            )
+                            ), path = path, host = host)
                         ));
                         *resp.status_mut() = StatusCode::NOT_FOUND;
                         A(future::ok(resp))
