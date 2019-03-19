@@ -16,7 +16,7 @@ use crate::file::write_to_mmap;
 pub fn run(addr: &SocketAddr) -> Result<(), Error> {
     let mut runtime = Runtime::new()?;
 
-    let files: Arc<RwLock<BTreeMap<String, &'static Mmap>>> = Default::default();
+    let files: Arc<RwLock<BTreeMap<String, &'static [u8]>>> = Default::default();
 
     let server = Server::try_bind(&addr)?.serve(move || {
         let files = Arc::clone(&files);
@@ -27,7 +27,7 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 match file {
                     Some(file) => {
                         log::info!("GET  {} -> [found {} bytes]", req.uri(), file.len());
-                        let resp = Response::new(Body::from(file.as_ref()));
+                        let resp = Response::new(Body::from(file));
                         A(future::ok(resp))
                     }
                     None => {
@@ -68,7 +68,7 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                         // files can't be removed, so leaking is fine
                         // ...and it appears to be the only way to create a response,
                         // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
-                        let file = Box::leak(Box::new(mmap));
+                        let file = &**Box::leak(Box::new(mmap));
                         files.write().unwrap().insert(uri.path().to_string(), file);
                         Response::new(Body::empty())
                     });
