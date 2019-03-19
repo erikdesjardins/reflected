@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug, Display};
 
-use failure::Error;
+pub type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 pub struct DisplayError(Error);
 

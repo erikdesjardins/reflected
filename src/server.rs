@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 
-use failure::Error;
 use hyper::header::HOST;
 use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
@@ -10,6 +9,7 @@ use tokio::prelude::future::Either::{A, B};
 use tokio::prelude::*;
 use tokio::runtime::Runtime;
 
+use crate::err::Error;
 use crate::file::write_to_mmap_and_leak;
 
 pub fn run(addr: &SocketAddr) -> Result<(), Error> {

@@ -1,11 +1,12 @@
 use std::mem;
 
-use failure::Error;
 use memmap::Mmap;
 use tempfile::tempfile;
 use tokio::fs::File;
 use tokio::io::write_all;
 use tokio::prelude::*;
+
+use crate::err::Error;
 
 pub fn write_to_mmap_and_leak<T, E>(
     body: impl Stream<Item = T, Error = E>,
