@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 
-use hyper::header::HOST;
+use hyper::header::{HeaderValue, CONTENT_LENGTH, HOST};
 use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use tokio::prelude::future::Either::{A, B};
@@ -26,7 +26,8 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 match file {
                     Some(file) => {
                         log::info!("GET  {} -> [found {} bytes]", req.uri(), file.len());
-                        let resp = Response::new(Body::from(file));
+                        let mut resp = Response::new(Body::from(file));
+                        resp.headers_mut().insert(CONTENT_LENGTH, HeaderValue::from_str(&file.len().to_string()).unwrap());
                         A(future::ok(resp))
                     }
                     None => {
