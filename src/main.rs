@@ -8,7 +8,10 @@ mod server;
 use structopt::StructOpt;
 
 fn main() -> Result<(), err::DisplayError> {
-    let opt::Options { verbose, port } = opt::Options::from_args();
+    let opt::Options {
+        verbose,
+        listen_addr,
+    } = opt::Options::from_args();
 
     env_logger::Builder::new()
         .filter_level(match verbose {
@@ -19,7 +22,7 @@ fn main() -> Result<(), err::DisplayError> {
         })
         .init();
 
-    server::run(&([0, 0, 0, 0], port).into())?;
+    server::run(&listen_addr)?;
 
     Ok(())
 }

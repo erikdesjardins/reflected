@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -11,6 +13,6 @@ pub struct Options {
     )]
     pub verbose: u8,
 
-    #[structopt(help = "Port to listen on")]
-    pub port: u16,
+    #[structopt(help = "Socket address to listen on")]
+    pub listen_addr: SocketAddr,
 }
