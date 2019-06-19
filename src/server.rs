@@ -43,7 +43,7 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                         let mut resp = Response::new(Body::from(
                             format!(concat!(
                                 "<html>",
-                                "<code>curl -Of -X POST {host}/{path} --data-binary @{path}</code>",
+                                "<code>curl -Of -X POST {host}/{path} --data-binary @- < {path}</code>",
                                 "<p/>",
                                 "<span id='info'>or </span>",
                                 "<input",
