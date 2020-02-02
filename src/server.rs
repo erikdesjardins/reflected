@@ -44,13 +44,16 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                             format!(concat!(
                                 "<!DOCTYPE html>",
                                 "<html>",
+                                "<head></head>",
+                                "<body>",
                                 "<code>curl -Of -X POST {host}/{path} --data-binary @- < {path}</code>",
                                 "<p/>",
                                 "<span id='info'>or </span>",
                                 "<input",
                                 " type='file'",
-                                " onchange=\"disabled = true, info.replaceWith('uploading...'), fetch(location, {{ method: 'POST', body: files[0] }}).then(() => this.replaceWith('done'))\"",
+                                " onchange='disabled = true, info.replaceWith(`uploading...`), fetch(location, {{ method: `POST`, body: files[0] }}).then(() => this.replaceWith(`done`))'",
                                 "/>",
+                                "</body>",
                                 "</html>",
                             ), path = path, host = host)
                         ));
