@@ -6,12 +6,12 @@ description = "Upload and serve temporary files."
 edition = "2018"
 
 [dependencies]
-env_logger = { version = "0.6", default-features = false, features = ["humantime"] }
+env_logger = { version = "0.7", default-features = false, features = ["humantime"] }
 hyper = "0.12"
 log = "0.4"
 memmap = "0.7"
-structopt = { version = "0.2", default-features = false }
-tempfile = "3"
+structopt = { version = "0.3", default-features = false }
+tempfile = "3.1"
 tokio = "0.1"
 
 [profile.release]
