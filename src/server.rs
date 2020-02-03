@@ -28,7 +28,7 @@ pub fn run(addr: &SocketAddr) -> Result<(), Error> {
                 async move {
                     let resp = match *req.method() {
                         Method::GET => {
-                            let file = files.read().await.get(req.uri().path()).map(|file| *file);
+                            let file = files.read().await.get(req.uri().path()).copied();
                             match file {
                                 Some(file) => {
                                     log::info!(
