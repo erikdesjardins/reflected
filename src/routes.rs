@@ -1,32 +1,31 @@
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
-use hyper::header::{HeaderValue, CONTENT_LENGTH, HOST};
+use hyper::header::HOST;
 use hyper::{Body, Method, Request, Response, StatusCode};
+use memmap::Mmap;
 use tokio::sync::RwLock;
 
+use crate::body::ArcBody;
 use crate::err::Error;
-use crate::file::write_to_mmap_and_leak;
+use crate::file::write_to_mmap;
 
 #[derive(Default)]
 pub struct State {
-    files: RwLock<BTreeMap<String, &'static [u8]>>,
+    files: RwLock<BTreeMap<String, Arc<Mmap>>>,
 }
 
 pub async fn respond_to_request(
     req: Request<Body>,
     state: &State,
-) -> Result<Response<Body>, Error> {
+) -> Result<Response<ArcBody>, Error> {
     match *req.method() {
         Method::GET => {
-            let file = state.files.read().await.get(req.uri().path()).copied();
+            let file = state.files.read().await.get(req.uri().path()).cloned();
             match file {
                 Some(file) => {
                     log::info!("GET  {} -> [found {} bytes]", req.uri(), file.len());
-                    let mut resp = Response::new(Body::from(file));
-                    resp.headers_mut().insert(
-                        CONTENT_LENGTH,
-                        HeaderValue::from_str(&file.len().to_string()).unwrap(),
-                    );
+                    let resp = Response::new(ArcBody::from_arc(file));
                     Ok(resp)
                 }
                 None => {
@@ -39,7 +38,7 @@ pub async fn respond_to_request(
                         None => "example.com",
                         Some(h) => h,
                     };
-                    let mut resp = Response::new(Body::from(
+                    let mut resp = Response::new(ArcBody::new(
                         format!(concat!(
                             "<!DOCTYPE html>",
                             "<html>",
@@ -66,18 +65,18 @@ pub async fn respond_to_request(
             let (parts, body) = req.into_parts();
             // leaking appears to be the only (efficient) way to create a response,
             // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
-            let file = write_to_mmap_and_leak(body).await?;
+            let file = write_to_mmap(body).await?;
             log::info!("POST {} -> [uploaded {} bytes]", parts.uri, file.len());
             state
                 .files
                 .write()
                 .await
-                .insert(parts.uri.path().to_string(), file);
-            Ok(Response::new(Body::empty()))
+                .insert(parts.uri.path().to_string(), Arc::new(file));
+            Ok(Response::new(ArcBody::empty()))
         }
         _ => {
             log::warn!("{} {} -> [method not allowed]", req.method(), req.uri());
-            let mut resp = Response::new(Body::empty());
+            let mut resp = Response::new(ArcBody::empty());
             *resp.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
             Ok(resp)
         }

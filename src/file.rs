@@ -1,5 +1,3 @@
-use std::mem::{self, ManuallyDrop};
-
 use memmap::Mmap;
 use tempfile::tempfile;
 use tokio::fs::File;
@@ -8,9 +6,9 @@ use tokio::stream::{Stream, StreamExt};
 
 use crate::err::Error;
 
-pub async fn write_to_mmap_and_leak<T, E>(
+pub async fn write_to_mmap<T, E>(
     mut body: impl Stream<Item = Result<T, E>> + Unpin,
-) -> Result<&'static [u8], Error>
+) -> Result<Mmap, Error>
 where
     T: AsRef<[u8]>,
     E: Into<Error>,
@@ -26,10 +24,7 @@ where
 
     // safety: this is an unlinked, exclusive-access temporary file,
     // so it cannot be modified or truncated by anyone else
-    let mmap = ManuallyDrop::new(unsafe { Mmap::map(&file)? });
-    // safety: the mmap will be leaked, and therefore can never be unmapped
-    // so the pointed-to data will be valid for the static lifetime
-    let data = unsafe { mem::transmute::<&[u8], &'static [u8]>(&*mmap) };
+    let mmap = unsafe { Mmap::map(&file)? };
 
-    Ok(data)
+    Ok(mmap)
 }
