@@ -1,6 +1,7 @@
 mod err;
 mod file;
 mod opt;
+mod routes;
 mod server;
 
 use structopt::StructOpt;
