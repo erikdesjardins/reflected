@@ -45,7 +45,7 @@ pub async fn respond_to_request(
                             "<html>",
                             "<head></head>",
                             "<body>",
-                            "<code>curl -Of -X POST {host}/{path} --data-binary @- < {path}</code>",
+                            "<code>curl -o /dev/null -X POST {host}/{path} --data-binary @- < {path}</code>",
                             "<p/>",
                             "<span id='info'>or </span>",
                             "<input",
