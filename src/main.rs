@@ -1,8 +1,8 @@
-#![allow(clippy::map_clone)]
-
+mod body;
 mod err;
 mod file;
 mod opt;
+mod routes;
 mod server;
 
 use structopt::StructOpt;
