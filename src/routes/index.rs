@@ -10,11 +10,13 @@ pub async fn get(req: Request<Body>, state: &State) -> Result<Response<ArcBody>,
     let files_listing = files
         .iter()
         .map(|(path, file)| {
-            format!(
-                "<div><a href='{path}'>{path}</a> ({len} bytes)</div>",
-                path = path,
-                len = file.len()
-            )
+            format!(concat!(
+                "<div>",
+                "<a href=\"{path}\">{path}</a> ",
+                "{len} bytes ",
+                "(<a href onclick='fetch(previousElementSibling.href, {{ method: `DELETE` }}).then(() => location.reload())'>delete</a>)",
+                "</div>",
+            ), path = path, len = file.len())
         })
         .collect::<Vec<_>>()
         .join("");
