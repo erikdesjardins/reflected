@@ -74,6 +74,21 @@ pub async fn respond_to_request(
                 .insert(parts.uri.path().to_string(), Arc::new(file));
             Ok(Response::new(ArcBody::empty()))
         }
+        Method::DELETE => {
+            let file = state.files.write().await.remove(req.uri().path());
+            match file {
+                Some(file) => {
+                    log::info!("DELETE {} -> [deleted {} bytes]", req.uri(), file.len());
+                    Ok(Response::new(ArcBody::empty()))
+                }
+                None => {
+                    log::info!("DELETE {} -> [not found]", req.uri());
+                    let mut resp = Response::new(ArcBody::empty());
+                    *resp.status_mut() = StatusCode::NOT_FOUND;
+                    Ok(resp)
+                }
+            }
+        }
         _ => {
             log::warn!("{} {} -> [method not allowed]", req.method(), req.uri());
             let mut resp = Response::new(ArcBody::empty());
