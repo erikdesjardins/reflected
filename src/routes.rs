@@ -63,8 +63,6 @@ pub async fn respond_to_request(
         Method::POST => {
             log::info!("POST {} -> [start upload]", req.uri());
             let (parts, body) = req.into_parts();
-            // leaking appears to be the only (efficient) way to create a response,
-            // since AsRef<[u8]>, i.e. from Arc<Mmap>, is not enough
             let file = write_to_mmap(body).await?;
             log::info!("POST {} -> [uploaded {} bytes]", parts.uri, file.len());
             state
