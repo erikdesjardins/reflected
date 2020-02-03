@@ -24,12 +24,12 @@ pub async fn respond_to_request(
             let file = state.files.read().await.get(req.uri().path()).cloned();
             match file {
                 Some(file) => {
-                    log::info!("GET  {} -> [found {} bytes]", req.uri(), file.len());
+                    log::info!("GET {} -> [found {} bytes]", req.uri(), file.len());
                     let resp = Response::new(ArcBody::from_arc(file));
                     Ok(resp)
                 }
                 None => {
-                    log::info!("GET  {} -> [not found]", req.uri());
+                    log::info!("GET {} -> [not found]", req.uri());
                     let path = match req.uri().path().trim_start_matches('/') {
                         "" => "file.txt",
                         p => p,
