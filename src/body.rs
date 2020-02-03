@@ -10,19 +10,19 @@ use hyper::HeaderMap;
 use tokio::macros::support::{Pin, Poll};
 
 pub struct ArcBody {
-    cursor: Option<Cursor<ArcInnerAsRef<[u8]>>>,
+    cursor: Option<Cursor<ArcAsRef<[u8]>>>,
 }
 
 impl ArcBody {
     pub fn new(bytes: impl AsRef<[u8]> + Sync + Send + 'static) -> Self {
         Self {
-            cursor: Some(Cursor::new(ArcInnerAsRef(Arc::new(bytes)))),
+            cursor: Some(Cursor::new(ArcAsRef(Arc::new(bytes)))),
         }
     }
 
     pub fn from_arc(arc: Arc<dyn AsRef<[u8]> + Sync + Send>) -> Self {
         Self {
-            cursor: Some(Cursor::new(ArcInnerAsRef(arc))),
+            cursor: Some(Cursor::new(ArcAsRef(arc))),
         }
     }
 
@@ -31,16 +31,16 @@ impl ArcBody {
     }
 }
 
-pub struct ArcInnerAsRef<T: ?Sized>(Arc<dyn AsRef<T> + Sync + Send>);
+pub struct ArcAsRef<T: ?Sized>(Arc<dyn AsRef<T> + Sync + Send>);
 
-impl<T: ?Sized> AsRef<T> for ArcInnerAsRef<T> {
+impl<T: ?Sized> AsRef<T> for ArcAsRef<T> {
     fn as_ref(&self) -> &T {
         AsRef::as_ref(&*self.0)
     }
 }
 
 impl HttpBody for ArcBody {
-    type Data = Cursor<ArcInnerAsRef<[u8]>>;
+    type Data = Cursor<ArcAsRef<[u8]>>;
     type Error = Infallible;
 
     fn poll_data(
