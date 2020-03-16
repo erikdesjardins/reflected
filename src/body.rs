@@ -15,9 +15,7 @@ pub struct ArcBody {
 
 impl ArcBody {
     pub fn new(bytes: impl AsRef<[u8]> + Sync + Send + 'static) -> Self {
-        Self {
-            cursor: Some(Cursor::new(ArcAsRef(Arc::new(bytes)))),
-        }
+        Self::from_arc(Arc::new(bytes))
     }
 
     pub fn from_arc(arc: Arc<dyn AsRef<[u8]> + Sync + Send>) -> Self {
