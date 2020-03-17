@@ -1,16 +1,23 @@
 use std::convert::Infallible;
 use std::io::Cursor;
+use std::ops::Deref;
 use std::sync::Arc;
 use std::task::Context;
+use std::u32;
 
 use http_body::SizeHint;
-use hyper::body::{Buf, HttpBody};
+use hyper::body::HttpBody;
 use hyper::header::HeaderValue;
 use hyper::HeaderMap;
 use tokio::macros::support::{Pin, Poll};
 
+use crate::as_ref::{ForwardAsRef, ReindexAsRef};
+
+type ArcAsRefBytes = Arc<dyn AsRef<[u8]> + Sync + Send>;
+
 pub struct ArcBody {
-    cursor: Option<Cursor<ArcAsRef<[u8]>>>,
+    data: Option<ArcAsRefBytes>,
+    pos: usize,
 }
 
 impl ArcBody {
@@ -18,34 +25,52 @@ impl ArcBody {
         Self::from_arc(Arc::new(bytes))
     }
 
-    pub fn from_arc(arc: Arc<dyn AsRef<[u8]> + Sync + Send>) -> Self {
+    pub fn from_arc(arc: ArcAsRefBytes) -> Self {
         Self {
-            cursor: Some(Cursor::new(ArcAsRef(arc))),
+            data: Some(arc),
+            pos: 0,
         }
     }
 
     pub fn empty() -> Self {
-        Self { cursor: None }
+        Self { data: None, pos: 0 }
     }
-}
 
-pub struct ArcAsRef<T: ?Sized>(Arc<dyn AsRef<T> + Sync + Send>);
-
-impl<T: ?Sized> AsRef<T> for ArcAsRef<T> {
-    fn as_ref(&self) -> &T {
-        AsRef::as_ref(&*self.0)
+    fn remaining_size(&self) -> usize {
+        match &self.data {
+            Some(data) => Arc::deref(data).as_ref().len().saturating_sub(self.pos),
+            None => 0,
+        }
     }
 }
 
 impl HttpBody for ArcBody {
-    type Data = Cursor<ArcAsRef<[u8]>>;
+    type Data = Cursor<ForwardAsRef<ArcAsRefBytes, [u8]>>;
     type Error = Infallible;
 
     fn poll_data(
         mut self: Pin<&mut Self>,
         _: &mut Context<'_>,
     ) -> Poll<Option<Result<Self::Data, Self::Error>>> {
-        Poll::Ready(self.cursor.take().map(Ok))
+        let Self { data, pos } = &mut *self;
+
+        // tokio or std::sys::windows will panic if we try to send a slice bigger than this
+        let chunk_size = u32::MAX as usize;
+
+        let chunk = match data {
+            Some(data) if Arc::deref(data).as_ref().len().saturating_sub(*pos) > chunk_size => {
+                let chunk = Arc::new(ReindexAsRef::new(
+                    ForwardAsRef::new(Arc::clone(data)),
+                    *pos..*pos + chunk_size,
+                ));
+                *pos += chunk_size;
+                chunk
+            }
+            data @ Some(_) => data.take().unwrap(),
+            None => return Poll::Ready(None),
+        };
+
+        Poll::Ready(Some(Ok(Cursor::new(ForwardAsRef::new(chunk)))))
     }
 
     fn poll_trailers(
@@ -56,14 +81,10 @@ impl HttpBody for ArcBody {
     }
 
     fn is_end_stream(&self) -> bool {
-        self.cursor.is_none()
+        self.remaining_size() == 0
     }
 
     fn size_hint(&self) -> SizeHint {
-        let len = match &self.cursor {
-            Some(cursor) => cursor.remaining(),
-            None => 0,
-        };
-        SizeHint::with_exact(len as u64)
+        SizeHint::with_exact(self.remaining_size() as u64)
     }
 }
