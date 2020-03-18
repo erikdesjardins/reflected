@@ -493,7 +493,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "reflected"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "headers 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
