@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 use std::io::Cursor;
-use std::ops::Deref;
+use std::mem;
+use std::ops::{Deref, Range};
 use std::sync::Arc;
 use std::task::Context;
 use std::u32;
@@ -17,60 +18,80 @@ type ArcAsRefBytes = Arc<dyn AsRef<[u8]> + Sync + Send>;
 
 pub struct ArcBody {
     data: Option<ArcAsRefBytes>,
-    pos: usize,
+    range: Range<usize>,
 }
 
 impl ArcBody {
-    pub fn new(bytes: impl AsRef<[u8]> + Sync + Send + 'static) -> Self {
+    pub fn new<T>(bytes: T) -> Self
+    where
+        T: AsRef<[u8]> + Sync + Send + 'static,
+    {
         Self::from_arc(Arc::new(bytes))
     }
 
-    pub fn from_arc(arc: ArcAsRefBytes) -> Self {
+    pub fn from_arc<T>(arc: Arc<T>) -> Self
+    where
+        T: AsRef<[u8]> + Sync + Send + 'static,
+    {
         Self {
+            range: 0..Arc::deref(&arc).as_ref().len(),
             data: Some(arc),
-            pos: 0,
+        }
+    }
+
+    pub fn from_arc_with_range<T>(arc: Arc<T>, range: Range<usize>) -> Result<Self, Arc<T>>
+    where
+        T: AsRef<[u8]> + Sync + Send + 'static,
+    {
+        // check if the range is in bounds
+        match Arc::deref(&arc).as_ref().get(range.clone()) {
+            Some(_) => Ok(Self {
+                data: Some(arc),
+                range,
+            }),
+            None => Err(arc),
         }
     }
 
     pub fn empty() -> Self {
-        Self { data: None, pos: 0 }
-    }
-
-    fn remaining_size(&self) -> usize {
-        match &self.data {
-            Some(data) => Arc::deref(data).as_ref().len().saturating_sub(self.pos),
-            None => 0,
+        Self {
+            data: None,
+            range: 0..0,
         }
     }
 }
 
 impl HttpBody for ArcBody {
-    type Data = Cursor<ForwardAsRef<ArcAsRefBytes, [u8]>>;
+    type Data = Cursor<ReindexAsRef<ForwardAsRef<ArcAsRefBytes, [u8]>, Range<usize>, [u8]>>;
     type Error = Infallible;
 
     fn poll_data(
         mut self: Pin<&mut Self>,
         _: &mut Context<'_>,
     ) -> Poll<Option<Result<Self::Data, Self::Error>>> {
-        let Self { data, pos } = &mut *self;
+        let Self { data, range } = &mut *self;
 
         // tokio or std::sys::windows will panic if we try to send a slice bigger than this
         let chunk_size = u32::MAX as usize;
 
-        let chunk = match data {
-            Some(data) if Arc::deref(data).as_ref().len().saturating_sub(*pos) > chunk_size => {
-                let chunk = Arc::new(ReindexAsRef::new(
-                    ForwardAsRef::new(Arc::clone(data)),
-                    *pos..*pos + chunk_size,
-                ));
-                *pos += chunk_size;
-                chunk
+        let (data, range) = match data {
+            Some(data) if (range.end - range.start) > chunk_size => {
+                let split = range.start + chunk_size;
+                let (first, rest) = (range.start..split, split..range.end);
+                *range = rest;
+                (Arc::clone(data), first)
             }
-            data @ Some(_) => data.take().unwrap(),
+            data @ Some(_) => {
+                // can send everything in one shot
+                (data.take().unwrap(), mem::replace(range, 0..0))
+            }
             None => return Poll::Ready(None),
         };
 
-        Poll::Ready(Some(Ok(Cursor::new(ForwardAsRef::new(chunk)))))
+        Poll::Ready(Some(Ok(Cursor::new(ReindexAsRef::new(
+            ForwardAsRef::new(data),
+            range,
+        )))))
     }
 
     fn poll_trailers(
@@ -81,10 +102,11 @@ impl HttpBody for ArcBody {
     }
 
     fn is_end_stream(&self) -> bool {
-        self.remaining_size() == 0
+        self.range.start == self.range.end
     }
 
     fn size_hint(&self) -> SizeHint {
-        SizeHint::with_exact(self.remaining_size() as u64)
+        let len = self.range.end - self.range.start;
+        SizeHint::with_exact(len as u64)
     }
 }
