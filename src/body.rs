@@ -1,10 +1,10 @@
 use std::convert::Infallible;
+use std::i32;
 use std::io::Cursor;
 use std::mem;
 use std::ops::{Deref, Range};
 use std::sync::Arc;
 use std::task::Context;
-use std::u32;
 
 use http_body::SizeHint;
 use hyper::body::HttpBody;
@@ -71,8 +71,8 @@ impl HttpBody for ArcBody {
     ) -> Poll<Option<Result<Self::Data, Self::Error>>> {
         let Self { data, range } = &mut *self;
 
-        // tokio or std::sys::windows will panic if we try to send a slice bigger than this
-        let chunk_size = u32::MAX as usize;
+        // windows/linux can't handle write calls bigger than this
+        let chunk_size = i32::MAX as usize;
 
         let (data, range) = match data {
             Some(data) if (range.end - range.start) > chunk_size => {
