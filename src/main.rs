@@ -1,3 +1,6 @@
+#![allow(clippy::type_complexity)]
+
+mod as_ref;
 mod body;
 mod err;
 mod file;

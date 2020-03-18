@@ -1,12 +1,13 @@
 [package]
 name = "reflected"
-version = "0.3.0"
+version = "0.4.0"
 authors = []
 description = "Upload and serve temporary files."
 edition = "2018"
 
 [dependencies]
 env_logger = { version = "0.7", default-features = false, features = ["humantime"] }
+headers = "0.3"
 http-body = "0.3"
 hyper = "0.13"
 log = "0.4"
