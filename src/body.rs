@@ -62,7 +62,7 @@ impl ArcBody {
 }
 
 impl HttpBody for ArcBody {
-    type Data = Cursor<ReindexAsRef<ForwardAsRef<ArcAsRefBytes, [u8]>, Range<usize>, [u8]>>;
+    type Data = Cursor<ReindexAsRef<ForwardAsRef<ArcAsRefBytes>, Range<usize>>>;
     type Error = Infallible;
 
     fn poll_data(
@@ -88,8 +88,8 @@ impl HttpBody for ArcBody {
             None => return Poll::Ready(None),
         };
 
-        Poll::Ready(Some(Ok(Cursor::new(ReindexAsRef::new(
-            ForwardAsRef::new(data),
+        Poll::Ready(Some(Ok(Cursor::new(ReindexAsRef(
+            ForwardAsRef(data),
             range,
         )))))
     }
