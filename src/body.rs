@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::i32;
 use std::io::Cursor;
 use std::mem;
-use std::ops::{Deref, Range};
+use std::ops::Range;
 use std::sync::Arc;
 use std::task::Context;
 
@@ -34,7 +34,7 @@ impl ArcBody {
         T: AsRef<[u8]> + Sync + Send + 'static,
     {
         Self {
-            range: 0..Arc::deref(&arc).as_ref().len(),
+            range: 0..T::as_ref(&arc).len(),
             data: Some(arc),
         }
     }
@@ -44,7 +44,7 @@ impl ArcBody {
         T: AsRef<[u8]> + Sync + Send + 'static,
     {
         // check if the range is in bounds
-        match Arc::deref(&arc).as_ref().get(range.clone()) {
+        match T::as_ref(&arc).get(range.clone()) {
             Some(_) => Ok(Self {
                 data: Some(arc),
                 range,
