@@ -10,7 +10,8 @@ mod server;
 
 use structopt::StructOpt;
 
-fn main() -> Result<(), err::DisplayError> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<(), err::DisplayError> {
     let opt::Options {
         verbose,
         listen_addr,
@@ -25,7 +26,7 @@ fn main() -> Result<(), err::DisplayError> {
         })
         .init();
 
-    server::run(&listen_addr)?;
+    server::run(&listen_addr).await?;
 
     Ok(())
 }

@@ -1,8 +1,8 @@
 use memmap::Mmap;
 use tempfile::tempfile;
 use tokio::fs::File;
-use tokio::prelude::*;
-use tokio::stream::{Stream, StreamExt};
+use tokio::io::AsyncWriteExt;
+use tokio_stream::{Stream, StreamExt};
 
 use crate::err::Error;
 
