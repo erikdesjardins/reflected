@@ -63,7 +63,10 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    - run: set RUSTFLAGS=-Ctarget-feature=+crt-static && cargo build --release
+    - run: cargo build --release
+      env:
+        RUSTFLAGS: -Ctarget-feature=+crt-static
+    - run: dir target/release/reflected.exe
     - uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
