@@ -63,7 +63,7 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    - run: cargo build --release
+    - run: set RUSTFLAGS=-Ctarget-feature=+crt-static && cargo build --release
     - uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
