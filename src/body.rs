@@ -1,5 +1,4 @@
 use std::convert::Infallible;
-use std::i32;
 use std::io::Cursor;
 use std::mem;
 use std::ops::Range;
