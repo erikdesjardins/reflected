@@ -1,6 +1,6 @@
 [package]
 name = "reflected"
-version = "0.4.3"
+version = "0.4.4"
 authors = []
 description = "Upload and serve temporary files."
 edition = "2018"
