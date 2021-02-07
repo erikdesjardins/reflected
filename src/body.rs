@@ -5,8 +5,7 @@ use std::ops::Range;
 use std::sync::Arc;
 use std::task::Context;
 
-use http_body::SizeHint;
-use hyper::body::HttpBody;
+use hyper::body::{HttpBody, SizeHint};
 use hyper::header::HeaderValue;
 use hyper::HeaderMap;
 use tokio::macros::support::{Pin, Poll};
