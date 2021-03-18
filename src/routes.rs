@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use hyper::{Body, Method, Request, Response, StatusCode};
-use memmap::Mmap;
+use memmap2::Mmap;
 use tokio::sync::RwLock;
 
 use crate::body::ArcBody;
