@@ -1,4 +1,4 @@
-use memmap::Mmap;
+use memmap2::Mmap;
 use tempfile::tempfile;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
