@@ -19,7 +19,7 @@ pub async fn run(addr: &SocketAddr) -> Result<(), Error> {
         async move { Ok::<_, Infallible>(svc) }
     });
 
-    Server::try_bind(&addr)?.serve(make_svc).await?;
+    Server::try_bind(addr)?.serve(make_svc).await?;
 
     Ok(())
 }
