@@ -1,16 +1,16 @@
 [package]
 name = "reflected"
-version = "0.4.4"
+version = "0.4.5"
 authors = []
 description = "Upload and serve temporary files."
 edition = "2018"
 
 [dependencies]
-env_logger = { version = "0.8", default-features = false, features = ["humantime"] }
+env_logger = { version = "0.9", default-features = false, features = ["humantime"] }
 headers = "0.3"
 hyper = { version = "0.14", features = ["server", "http1", "tcp", "stream"] }
 log = "0.4"
-memmap2 = "0.2"
+memmap2 = "0.5"
 structopt = { version = "0.3", default-features = false }
 tempfile = "3.1"
 tokio = { version = "1.0", features = ["fs", "io-util", "macros", "rt", "sync"] }
