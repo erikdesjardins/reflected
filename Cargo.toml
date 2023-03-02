@@ -8,13 +8,12 @@ edition = "2018"
 [dependencies]
 env_logger = { version = "0.9", default-features = false, features = ["humantime"] }
 headers = "0.3"
-hyper = { version = "0.14", features = ["server", "http1", "tcp", "stream"] }
+hyper = { version = "0.14", features = ["server", "http1", "tcp"] }
 log = "0.4"
 memmap2 = "0.5"
 structopt = { version = "0.3", default-features = false }
 tempfile = "3.1"
 tokio = { version = "1.0", features = ["fs", "io-util", "macros", "rt", "sync"] }
-tokio-stream = "0.1"
 
 [profile.release]
 panic = "abort"

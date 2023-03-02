@@ -1,24 +1,19 @@
+use hyper::body::HttpBody;
+use hyper::Body;
 use memmap2::Mmap;
 use tempfile::tempfile;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use tokio_stream::{Stream, StreamExt};
 
 use crate::err::Error;
 
-pub async fn write_to_mmap<T, E>(
-    mut body: impl Stream<Item = Result<T, E>> + Unpin,
-) -> Result<Mmap, Error>
-where
-    T: AsRef<[u8]>,
-    E: Into<Error>,
-{
+pub async fn write_to_mmap(mut body: Body) -> Result<Mmap, Error> {
     let file = tempfile()?;
 
     let mut file = File::from_std(file);
-    while let Some(bytes) = body.next().await {
-        let bytes = bytes.map_err(Into::into)?;
-        file.write_all(bytes.as_ref()).await?;
+    while let Some(bytes) = body.data().await {
+        let bytes = bytes?;
+        file.write_all(&bytes).await?;
     }
     let file = file.into_std().await;
 
