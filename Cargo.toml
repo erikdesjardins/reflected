@@ -6,7 +6,7 @@ description = "Upload and serve temporary files."
 edition = "2018"
 
 [dependencies]
-env_logger = { version = "0.9", default-features = false, features = ["humantime"] }
+env_logger = { version = "0.10", default-features = false, features = ["humantime"] }
 headers = "0.3"
 hyper = { version = "0.14", features = ["server", "http1", "tcp"] }
 log = "0.4"
